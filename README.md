@@ -11,10 +11,11 @@
 
 ## Team Members & Roles
 
-| Name | Role | Responsibilities |
-|------|------|------------------|
-| **Kenzie Reese** | Lead Data Engineer | Data pipeline architecture, REIT cleaning, merge strategy |
-| **Carter** | Analysis Lead | Research question definition, hypothesis formulation |
+| Name | Roles | Responsibilities |
+|------|-------|------------------|
+| **Kenzie** | Lead Data Engineer, Analyst, Visualizer | Data pipeline architecture, REIT cleaning, analysis, visualization |
+| **Reese** | Analyst, Visualizer | Research analysis, data interpretation, visualization |
+| **Carter** | Analyst, Visualizer | Research analysis, data interpretation, visualization |
 
 ---
 
@@ -248,9 +249,7 @@ QM-2023-Capstone-Repo/
 ## Contact & Questions
 
 For questions about the data pipeline, research design, or reproducibility:
-- **Email**: [Team contact to be added]
-- **Office Hours**: Dr. Seagraves, Mon & Wed 3–5 PM (Helm 122-D)
-- **GitHub Issues**: [Will be enabled for feedback]
+- **Email**: mit1334@utulsa.edu, rms1753@utulsa.edu, cbb6479@utulsa.edu
 
 ---
 
