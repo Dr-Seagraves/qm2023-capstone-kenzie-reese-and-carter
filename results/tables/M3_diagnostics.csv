@@ -1,0 +1,8 @@
+metric,value
+breusch_pagan_lm_stat,242.70222255469753
+breusch_pagan_lm_pvalue,1.9855553560082895e-53
+breusch_pagan_f_stat,121.74025901646293
+breusch_pagan_f_pvalue,1.6388011458988015e-53
+n_obs_model_a,74991.0
+mortgage_exposure_lag3,1.0100372949588832
+price_growth_lag1,1.010037294958883

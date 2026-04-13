@@ -5,4 +5,5 @@ fredapi>=0.3
 matplotlib>=3.5
 seaborn>=0.12
 statsmodels>=0.13
+linearmodels>=6.0
 python-dateutil

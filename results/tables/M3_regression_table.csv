@@ -1,0 +1,10 @@
+variable,model_a_coef,model_a_se,model_a_t,model_a_p,model_a_sig,model_a_coef_star,model_b_did_coef,model_b_did_se,model_b_did_t,model_b_did_p,model_b_did_sig,model_b_did_coef_star
+mortgage_exposure_lag3,-0.10767108794376982,0.006420499839916427,-16.76989185084558,0.0,***,-0.1077***,,,,,,
+price_growth_lag1,0.5595889655114377,0.010834933380115984,51.64673799825869,0.0,***,0.5596***,0.5634386906027788,0.011093612547200864,50.78946900348935,0.0,***,0.5634***
+treated_post,,,,,,,-0.4000239658998268,0.0282870914685689,-14.14157289180162,0.0,***,-0.4000***
+Entity FE,,,,,,Yes,,,,,,Yes
+Time FE,,,,,,Yes,,,,,,Yes
+Clustered SE,,,,,,Yes,,,,,,Yes
+N,,,,,,74991,,,,,,74991
+R2,,,,,,0.3283,,,,,,0.3273
+Significance,,,,,,"*** p<0.01, ** p<0.05, * p<0.10",,,,,,"*** p<0.01, ** p<0.05, * p<0.10"
