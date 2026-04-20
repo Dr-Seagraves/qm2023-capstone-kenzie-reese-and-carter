@@ -3,8 +3,8 @@
 Dep. Variable:           price_growth   R-squared:                        0.3283
 Estimator:                   PanelOLS   R-squared (Between):             -0.7052
 No. Observations:               74991   R-squared (Within):               0.4632
-Date:                Mon, Apr 13 2026   R-squared (Overall):              0.1968
-Time:                        15:26:19   Log-likelihood                -1.199e+05
+Date:                Mon, Apr 20 2026   R-squared (Overall):              0.1968
+Time:                        16:03:47   Log-likelihood                -1.199e+05
 Cov. Estimator:             Clustered                                           
                                         F-statistic:                   1.808e+04
 Entities:                         894   P-value                           0.0000

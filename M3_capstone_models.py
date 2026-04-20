@@ -8,6 +8,7 @@ rate shocks on metro-level home price growth. It implements:
 1) Model A: Fixed Effects regression (entity and time FE via PanelOLS)
 2) Model B: Difference-in-Differences
 3) Required diagnostics and robustness checks
+4) Machine learning benchmarks on held-out future periods
 
 Outputs:
 - Tables: results/tables/M3_*.csv and results/tables/M3_*.txt
@@ -23,6 +24,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from linearmodels.panel import PanelOLS
 from scipy import stats
+from sklearn.base import clone
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from statsmodels.stats.diagnostic import het_breuschpagan
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 from statsmodels.tools.tools import add_constant
@@ -384,6 +389,248 @@ def run_robustness_checks(df: pd.DataFrame, model_std, model_cluster) -> tuple[p
     return lag_table, robustness
 
 
+def get_ml_feature_columns() -> list[str]:
+    """Return feature columns used for ML models."""
+    return [
+        "MORTGAGE30US",
+        "mortgage_lag1",
+        "mortgage_lag2",
+        "mortgage_lag3",
+        "price_growth_lag1",
+        "exposure",
+        "mortgage_exposure_lag3",
+        "treated",
+        "post_hike",
+        "treated_post",
+        "SizeRank",
+        "year",
+        "quarter",
+    ]
+
+
+def get_ml_model_specs() -> dict[str, object]:
+    """Return ML model configurations for benchmark comparisons."""
+    return {
+        "linear_regression": LinearRegression(),
+        "random_forest": RandomForestRegressor(
+            n_estimators=200,
+            max_depth=10,
+            min_samples_leaf=20,
+            random_state=42,
+            n_jobs=-1,
+        ),
+        "gradient_boosting": GradientBoostingRegressor(
+            n_estimators=200,
+            learning_rate=0.05,
+            max_depth=3,
+            subsample=0.8,
+            random_state=42,
+        ),
+    }
+
+
+def run_time_series_cross_validation(
+    ml_df: pd.DataFrame,
+    feature_cols: list[str],
+    model_specs: dict[str, object],
+    n_splits: int = 3,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Run expanding-window time-series cross-validation by date."""
+    unique_dates = np.sort(ml_df["date"].unique())
+    if len(unique_dates) < 12:
+        raise ValueError("Not enough time periods for time-series cross-validation.")
+
+    initial_train_size = max(8, int(len(unique_dates) * 0.5))
+    remaining = len(unique_dates) - initial_train_size
+    effective_splits = max(1, min(n_splits, remaining))
+    fold_size = max(1, remaining // effective_splits)
+
+    rows = []
+    for fold in range(effective_splits):
+        train_end_idx = initial_train_size + fold * fold_size
+        test_start_idx = train_end_idx
+        if test_start_idx >= len(unique_dates):
+            continue
+
+        if fold == effective_splits - 1:
+            test_end_idx = len(unique_dates)
+        else:
+            test_end_idx = min(len(unique_dates), test_start_idx + fold_size)
+
+        train_end_date = pd.Timestamp(unique_dates[train_end_idx - 1])
+        test_start_date = pd.Timestamp(unique_dates[test_start_idx])
+        test_end_date = pd.Timestamp(unique_dates[test_end_idx - 1])
+
+        train = ml_df[ml_df["date"] <= train_end_date].copy()
+        test = ml_df[
+            (ml_df["date"] >= test_start_date) & (ml_df["date"] <= test_end_date)
+        ].copy()
+
+        if train.empty or test.empty:
+            continue
+
+        X_train = train[feature_cols]
+        y_train = train["price_growth"]
+        X_test = test[feature_cols]
+        y_test = test["price_growth"]
+
+        for model_name, base_model in model_specs.items():
+            model = clone(base_model)
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+
+            rows.append(
+                {
+                    "fold": fold + 1,
+                    "model": model_name,
+                    "train_end": train_end_date.strftime("%Y-%m-%d"),
+                    "test_start": test_start_date.strftime("%Y-%m-%d"),
+                    "test_end": test_end_date.strftime("%Y-%m-%d"),
+                    "train_rows": len(train),
+                    "test_rows": len(test),
+                    "rmse": float(np.sqrt(mean_squared_error(y_test, preds))),
+                    "mae": float(mean_absolute_error(y_test, preds)),
+                    "r2": float(r2_score(y_test, preds)),
+                }
+            )
+
+    cv_results = pd.DataFrame(rows)
+    if cv_results.empty:
+        raise ValueError("Time-series cross-validation produced no valid folds.")
+
+    cv_summary = (
+        cv_results.groupby("model", as_index=False)
+        .agg(
+            folds=("fold", "nunique"),
+            rmse_mean=("rmse", "mean"),
+            rmse_std=("rmse", "std"),
+            mae_mean=("mae", "mean"),
+            mae_std=("mae", "std"),
+            r2_mean=("r2", "mean"),
+            r2_std=("r2", "std"),
+        )
+        .sort_values("rmse_mean")
+        .reset_index(drop=True)
+    )
+    cv_summary["rank_by_cv_rmse"] = np.arange(1, len(cv_summary) + 1)
+
+    return cv_results, cv_summary
+
+
+def run_machine_learning_models(
+    df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Benchmark ML regressors on holdout data and expanding-window CV."""
+    ml_df = df.copy()
+    ml_df["year"] = ml_df["date"].dt.year
+    ml_df["quarter"] = ml_df["date"].dt.quarter
+
+    feature_cols = get_ml_feature_columns()
+    model_specs = get_ml_model_specs()
+
+    ml_df = ml_df.dropna(subset=feature_cols + ["price_growth", "date"]).copy()
+    unique_dates = np.sort(ml_df["date"].unique())
+    if len(unique_dates) < 10:
+        raise ValueError("Not enough time periods for machine learning train/test split.")
+
+    split_idx = max(1, int(len(unique_dates) * 0.8))
+    split_idx = min(split_idx, len(unique_dates) - 1)
+    split_date = pd.Timestamp(unique_dates[split_idx])
+
+    train = ml_df[ml_df["date"] < split_date].copy()
+    test = ml_df[ml_df["date"] >= split_date].copy()
+
+    if train.empty or test.empty:
+        raise ValueError("Time split produced an empty train or test set for machine learning.")
+
+    X_train = train[feature_cols]
+    y_train = train["price_growth"]
+    X_test = test[feature_cols]
+    y_test = test["price_growth"]
+
+    metric_rows = []
+    predictions_by_model: dict[str, pd.DataFrame] = {}
+    fitted_models = {}
+
+    for name, base_model in model_specs.items():
+        model = clone(base_model)
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+
+        metric_rows.append(
+            {
+                "model": name,
+                "train_rows": len(train),
+                "test_rows": len(test),
+                "split_date": split_date.strftime("%Y-%m-%d"),
+                "rmse": float(np.sqrt(mean_squared_error(y_test, preds))),
+                "mae": float(mean_absolute_error(y_test, preds)),
+                "r2": float(r2_score(y_test, preds)),
+            }
+        )
+
+        predictions_by_model[name] = pd.DataFrame(
+            {
+                "date": test["date"].to_numpy(),
+                "actual": y_test.to_numpy(),
+                "predicted": preds,
+            }
+        )
+        fitted_models[name] = model
+
+    metrics = pd.DataFrame(metric_rows).sort_values("rmse").reset_index(drop=True)
+    metrics["rank_by_rmse"] = np.arange(1, len(metrics) + 1)
+
+    cv_results, cv_summary = run_time_series_cross_validation(
+        ml_df=ml_df,
+        feature_cols=feature_cols,
+        model_specs=model_specs,
+        n_splits=3,
+    )
+
+    best_model_name = cv_summary.loc[0, "model"]
+    best_model = fitted_models[best_model_name]
+    best_preds = predictions_by_model[best_model_name]
+
+    if hasattr(best_model, "feature_importances_"):
+        importance_values = np.asarray(best_model.feature_importances_)
+    elif hasattr(best_model, "coef_"):
+        importance_values = np.abs(np.asarray(best_model.coef_))
+    else:
+        importance_values = np.full(len(feature_cols), np.nan)
+
+    feature_importance = (
+        pd.DataFrame({"feature": feature_cols, "importance": importance_values})
+        .sort_values("importance", ascending=False)
+        .reset_index(drop=True)
+    )
+    feature_importance.insert(0, "model", best_model_name)
+
+    plot_df = (
+        best_preds.groupby("date", as_index=False)[["actual", "predicted"]]
+        .mean()
+        .sort_values("date")
+    )
+
+    plt.figure(figsize=(11, 6))
+    plt.plot(plot_df["date"], plot_df["actual"], linewidth=2, label="Actual mean price growth")
+    plt.plot(
+        plot_df["date"],
+        plot_df["predicted"],
+        linewidth=2,
+        label=f"Predicted ({best_model_name})",
+    )
+    plt.title("M3 ML: Actual vs Predicted Price Growth (Holdout)")
+    plt.xlabel("Date")
+    plt.ylabel("Average Price Growth (%)")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / "M3_ml_actual_vs_predicted.png", dpi=300)
+    plt.close()
+
+    return metrics, feature_importance, cv_results, cv_summary
+
+
 def significance_stars(p_value: float) -> str:
     """Return significance stars for conventional thresholds."""
     if pd.isna(p_value):
@@ -498,12 +745,24 @@ def save_outputs(
     robustness: pd.DataFrame,
     model_a_cluster,
     model_b_did,
+    ml_metrics: pd.DataFrame | None = None,
+    ml_feature_importance: pd.DataFrame | None = None,
+    ml_cv_results: pd.DataFrame | None = None,
+    ml_cv_summary: pd.DataFrame | None = None,
 ) -> None:
     """Write all tables and text summaries to results/tables."""
     reg_table.to_csv(TABLES_DIR / "M3_regression_table.csv", index=False)
     diagnostics.to_csv(TABLES_DIR / "M3_diagnostics.csv", index=False)
     lag_table.to_csv(TABLES_DIR / "M3_robustness_lags.csv", index=False)
     robustness.to_csv(TABLES_DIR / "M3_robustness_checks.csv", index=False)
+    if ml_metrics is not None:
+        ml_metrics.to_csv(TABLES_DIR / "M3_ml_metrics.csv", index=False)
+    if ml_feature_importance is not None:
+        ml_feature_importance.to_csv(TABLES_DIR / "M3_ml_feature_importance.csv", index=False)
+    if ml_cv_results is not None:
+        ml_cv_results.to_csv(TABLES_DIR / "M3_ml_cv_results.csv", index=False)
+    if ml_cv_summary is not None:
+        ml_cv_summary.to_csv(TABLES_DIR / "M3_ml_cv_summary.csv", index=False)
 
     with open(TABLES_DIR / "M3_modelA_summary.txt", "w", encoding="utf-8") as f:
         f.write(str(model_a_cluster.summary))
@@ -525,6 +784,7 @@ def main() -> None:
     plot_did_pretrends(df)
     lag_table, robustness = run_robustness_checks(df, model_a_std, model_a_cluster)
     reg_table = build_regression_table(model_a_cluster, model_b_did)
+    ml_metrics, ml_feature_importance, ml_cv_results, ml_cv_summary = run_machine_learning_models(df)
 
     save_outputs(
         reg_table=reg_table,
@@ -533,6 +793,10 @@ def main() -> None:
         robustness=robustness,
         model_a_cluster=model_a_cluster,
         model_b_did=model_b_did,
+        ml_metrics=ml_metrics,
+        ml_feature_importance=ml_feature_importance,
+        ml_cv_results=ml_cv_results,
+        ml_cv_summary=ml_cv_summary,
     )
 
     print("M3 modeling pipeline complete.")

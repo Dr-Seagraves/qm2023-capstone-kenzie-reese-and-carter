@@ -142,14 +142,37 @@ python3 code/merge_final_panel.py
   - `data/final/data_dictionary.md`
 - Time: ~5 seconds
 
+### Step 6: Run Milestone 3 Econometrics + Machine Learning
+```bash
+python3 M3_capstone_models.py
+```
+- Inputs: `data/final/metro_mortgage_panel.csv`
+- Outputs:
+  - `results/tables/M3_regression_table.csv`
+  - `results/tables/M3_diagnostics.csv`
+  - `results/tables/M3_robustness_lags.csv`
+  - `results/tables/M3_robustness_checks.csv`
+  - `results/tables/M3_modelA_summary.txt`
+  - `results/tables/M3_modelB_did_summary.txt`
+  - `results/tables/M3_ml_metrics.csv`
+  - `results/tables/M3_ml_feature_importance.csv`
+  - `results/tables/M3_ml_cv_results.csv`
+  - `results/tables/M3_ml_cv_summary.csv`
+  - `results/figures/M3_residuals_vs_fitted.png`
+  - `results/figures/M3_qq_plot.png`
+  - `results/figures/M3_did_pretrends.png`
+  - `results/figures/M3_ml_actual_vs_predicted.png`
+- Time: ~1-3 minutes
+
 ### Full Pipeline (One Command)
 ```bash
 python3 code/fetch_reit_data.py && \
 python3 code/fetch_mortgage_data.py && \
 python3 code/fetch_metro_prices_data.py && \
-python3 code/merge_final_panel.py
+python3 code/merge_final_panel.py && \
+python3 M3_capstone_models.py
 ```
-**Total runtime**: ~25 seconds
+**Total runtime**: ~2-4 minutes
 
 ---
 
@@ -243,6 +266,7 @@ QM-2023-Capstone-Repo/
 - Test differential sensitivity: urban vs. suburban interaction term
 - Lag structure: examine 1–4 quarter lagged effects
 - Robustness checks: alternative estimators (RE, GMM), alternative rate measures (15-yr, ARM)
+- Machine learning benchmark: compare linear and tree-based models on held-out future periods
 
 ---
 
