@@ -1,0 +1,32 @@
+                          PanelOLS Estimation Summary                           
+================================================================================
+Dep. Variable:           price_growth   R-squared:                        0.3283
+Estimator:                   PanelOLS   R-squared (Between):             -0.7052
+No. Observations:               74991   R-squared (Within):               0.4632
+Date:                Mon, Apr 20 2026   R-squared (Overall):              0.1968
+Time:                        16:03:47   Log-likelihood                -1.199e+05
+Cov. Estimator:             Clustered                                           
+                                        F-statistic:                   1.808e+04
+Entities:                         894   P-value                           0.0000
+Avg Obs:                       83.883   Distribution:                 F(2,73994)
+Min Obs:                       25.000                                           
+Max Obs:                       102.00   F-statistic (robust):             2037.6
+                                        P-value                           0.0000
+Time periods:                     102   Distribution:                 F(2,73994)
+Avg Obs:                       735.21                                           
+Min Obs:                       432.00                                           
+Max Obs:                       894.00                                           
+                                                                                
+                                   Parameter Estimates                                    
+==========================================================================================
+                        Parameter  Std. Err.     T-stat    P-value    Lower CI    Upper CI
+------------------------------------------------------------------------------------------
+mortgage_exposure_lag3    -0.1077     0.0064    -16.770     0.0000     -0.1203     -0.0951
+price_growth_lag1          0.5596     0.0108     51.647     0.0000      0.5384      0.5808
+==========================================================================================
+
+F-test for Poolability: 29.748
+P-value: 0.0000
+Distribution: F(994,73994)
+
+Included effects: Entity, Time

@@ -1,0 +1,5 @@
+coefficient,coef_standard,se_standard,coef_clustered,se_clustered,check,specification,coef_mortgage_exposure_lag3,se_mortgage_exposure_lag3,p_value_mortgage_exposure_lag3,n_obs,coef_treated_placebo,se_treated_placebo,p_value_treated_placebo
+mortgage_exposure_lag3,-0.10767108794376982,0.005781209235104672,-0.10767108794376982,0.006420499839916427,se_comparison,,,,,,,,
+,,,,,outlier_exclusion,baseline,-0.10767108794376982,0.006420499839916427,0.0,74991.0,,,
+,,,,,outlier_exclusion,exclude_2020_03_to_2020_05,-0.10647715268174483,0.006361153881347432,0.0,74097.0,,,
+,,,,,did_placebo,did_placebo_pretrend,,,,59793.0,0.36050309914422696,0.05944705381589447,1.3335783588530603e-09

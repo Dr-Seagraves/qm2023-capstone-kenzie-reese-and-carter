@@ -1,0 +1,14 @@
+model,feature,importance
+random_forest,price_growth_lag1,0.7579975630447661
+random_forest,year,0.06472929317095992
+random_forest,mortgage_exposure_lag3,0.060566209657249244
+random_forest,mortgage_lag1,0.02660561955220761
+random_forest,MORTGAGE30US,0.0262146294234441
+random_forest,exposure,0.022529389772445143
+random_forest,mortgage_lag2,0.016651838563730887
+random_forest,SizeRank,0.009099982128880597
+random_forest,mortgage_lag3,0.008576401368197368
+random_forest,quarter,0.006932179114031409
+random_forest,treated,9.689420408777406e-05
+random_forest,post_hike,0.0
+random_forest,treated_post,0.0
