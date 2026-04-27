@@ -1,0 +1,126 @@
+# Final Investment Memo
+
+MEMORANDUM  
+TO: Policy Committee (Housing Market and Monetary Transmission)  
+FROM: Kenzie, Reese, Carter  
+DATE: April 27, 2026  
+RE: Housing Market Response to Mortgage Rate Changes and Risk in High-Exposure Metros
+
+## Executive Summary
+
+We analyze a metro-level panel of 894 U.S. housing markets from 2009 Q1 through 2026 Q1 (74,991 metro-quarter observations) to estimate how mortgage rate tightening transmits into local home price growth. Our primary fixed-effects model shows that a 1 percentage point increase in lagged mortgage exposure is associated with a 0.1077 percentage point decline in quarterly home price growth (p < 0.001), controlling for metro and quarter fixed effects. This estimate is economically meaningful and consistent with affordability, user-cost, and credit-qualification channels.
+
+The post-2022 hike period produced an additional slowdown in highly exposed markets. In our difference-in-differences specification, the treated-post interaction is -0.4000 percentage points (p < 0.001), indicating materially weaker quarterly growth in high-exposure metros relative to lower-exposure metros after the rate-hike regime shift. Taken together, the evidence indicates that rate-sensitive metros should be treated as elevated-risk jurisdictions in high-rate environments.
+
+Policy recommendation: prioritize targeted monitoring and mitigation in high-exposure metros. Specifically, use exposure-based stress tiers in policy surveillance, prioritize affordability support where payment shocks are most severe, and run scenario tests that assume an additional 100 bps policy-rate increase. Under our Model A estimates, a 100 bps rate increase implies roughly a 0.16 to 0.20 percentage point quarterly growth slowdown in median-to-high exposure metros; a comparable rate cut implies a symmetric partial recovery.
+
+## Methodology
+
+### Data Sources
+
+1. Zillow ZHVI metro panel (housing values), metro-quarter level.
+2. FRED 30-year fixed mortgage rate series (`MORTGAGE30US`), aggregated to quarter.
+3. Team-constructed merged panel in `data/final/metro_mortgage_panel.csv`.
+
+### Sample Construction
+
+1. Unit of observation: metro-quarter.
+2. Entities: 894 metros.
+3. Time coverage in final panel: 2009-03-31 to 2026-03-31.
+4. Estimation sample: 74,991 observations.
+5. Inference: standard errors clustered at the metro (entity) level.
+
+### Model Specifications
+
+Model A (Two-Way Fixed Effects):
+
+\[
+\text{price\_growth}_{i,t} = \beta_1\text{mortgage\_exposure\_lag3}_{i,t} + \beta_2\text{price\_growth\_lag1}_{i,t} + \alpha_i + \tau_t + \varepsilon_{i,t}
+\]
+
+Model B (Difference-in-Differences):
+
+\[
+\text{price\_growth}_{i,t} = \delta(\text{treated}_i \times \text{post}_t) + \beta\text{price\_growth\_lag1}_{i,t} + \alpha_i + \tau_t + \varepsilon_{i,t}
+\]
+
+### Key Variable Definitions
+
+1. `price_growth`: quarterly growth in metro home prices (outcome).
+2. `mortgage_exposure_lag3`: lagged mortgage-rate exposure term used to capture delayed transmission effects.
+3. `price_growth_lag1`: lagged dependent variable for persistence and momentum.
+4. `treated_post`: interaction for high-exposure metros after the 2022 hiking-period cutoff.
+
+## Results
+
+### Table 1. Main Fixed Effects Model (Model A)
+
+| Variable | Coefficient | Std. Error | t-stat | p-value | Significance |
+|---|---:|---:|---:|---:|---|
+| `mortgage_exposure_lag3` | -0.1077 | 0.0064 | -16.77 | 0.0000 | *** |
+| `price_growth_lag1` | 0.5596 | 0.0108 | 51.65 | 0.0000 | *** |
+
+Model details: Entity FE = Yes, Time FE = Yes, Clustered SE = Yes, N = 74,991, R2 = 0.3283.
+
+Economic interpretation: a 100 bps increase in mortgage exposure reduces quarterly price growth by 0.1077 percentage points at unit exposure. At typical exposure levels in our sample, this scales to approximately 0.16 to 0.20 percentage points per quarter.
+
+### Table 2. Alternative Specification (Model B DiD)
+
+| Variable | Coefficient | Std. Error | t-stat | p-value | Significance |
+|---|---:|---:|---:|---:|---|
+| `treated_post` | -0.4000 | 0.0283 | -14.14 | 0.0000 | *** |
+| `price_growth_lag1` | 0.5634 | 0.0111 | 50.79 | 0.0000 | *** |
+
+Model details: Entity FE = Yes, Time FE = Yes, Clustered SE = Yes, N = 74,991, R2 = 0.3273.
+
+Interpretation: after the 2022 hike period, high-exposure metros experienced 0.40 percentage points lower quarterly price growth relative to lower-exposure metros, conditional on fixed effects and momentum controls.
+
+### Figure 1. Mortgage Rates and Housing Outcome Dynamics
+
+![Dual-axis housing and mortgage dynamics](results/figures/03_dual_axis.png)
+
+### Figure 2. Regression Diagnostics (Residuals vs Fitted)
+
+![Residuals vs fitted](results/figures/M3_residuals_vs_fitted.png)
+
+### Robustness and Diagnostic Summary
+
+1. Heteroskedasticity is present (Breusch-Pagan LM p-value = 1.99e-53), which is addressed using clustered standard errors.
+2. Multicollinearity is negligible (VIF approximately 1.01 for both regressors).
+3. Lag robustness remains stable and significant: lag1 = -0.1476, lag2 = -0.1368, lag3 = -0.1077 (all p < 0.001).
+4. Excluding 2020-03 through 2020-05 does not materially change the core estimate (-0.1065 vs -0.1077).
+5. Placebo DiD pre-trend estimate is significant (+0.3605, p < 0.001), so the DiD causal interpretation should be treated as directional rather than definitive.
+
+## Conclusions and Recommendations
+
+### Investment and Policy Implications
+
+1. Mortgage tightening has a statistically strong and economically meaningful negative association with metro home price growth.
+2. High-exposure metros are more vulnerable in elevated-rate regimes and should be prioritized in risk dashboards and policy stress tests.
+3. Use exposure-stratified scenario planning for policy communication and local market surveillance.
+
+### Risk Assessment
+
+1. The strongest model risk is the DiD parallel-trends concern indicated by the placebo test.
+2. Omitted local controls (inventory, migration, labor demand shocks) may still bias effect size.
+3. Structural shifts in credit standards may alter out-of-sample performance of historical coefficients.
+
+### Caveats
+
+1. Model A (fixed effects) is the primary estimate for inference reliability.
+2. Model B should be interpreted as supportive directional evidence, not a stand-alone causal estimate.
+3. External validity is strongest for U.S. metro housing markets in the observed sample period.
+
+## References
+
+1. Zillow Research Data: Zillow Home Value Index (ZHVI), metro-level housing values. https://www.zillow.com/research/data/
+2. Federal Reserve Economic Data (FRED): 30-Year Fixed Rate Mortgage Average in the United States (`MORTGAGE30US`). https://fred.stlouisfed.org/series/MORTGAGE30US
+3. Team project outputs and scripts: `M3_capstone_models.py`, `results/tables/`, and `results/figures/` in this repository.
+
+## Appendix A: AI Audit Summary (M1-M4)
+
+1. AI was used to help structure memo language, improve clarity, and format output tables into publication-ready markdown.
+2. All quantitative claims in this memo were verified against repository artifacts in `results/tables/` and `results/figures/`.
+3. AI-suggested interpretations were accepted only when they matched coefficient signs, magnitudes, units, and project context.
+4. AI limitations observed: occasional overstatement of causal certainty in DiD contexts; corrected using placebo pre-trend evidence.
+5. Human contribution: variable construction, estimation decisions, diagnostics, robustness testing, and final interpretation choices were completed and reviewed by team members.
